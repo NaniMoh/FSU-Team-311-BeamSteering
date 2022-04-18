@@ -1,0 +1,303 @@
+from tkinter import *
+from tkinter import filedialog
+from tkinter import messagebox
+import time
+import pyautogui
+import math
+import numpy as np
+import matplotlib.pyplot as plot
+
+root = Tk()
+root.title('BeamSteering GUI')
+root.iconbitmap('bean.ico')
+root.geometry('1200x600')
+
+def sleep(s):
+    time.sleep(s)
+
+def click():
+    pyautogui.click()
+    sleep(0.2)
+
+def move_mouse(x,y):
+    pyautogui.moveTo(x,y)                           # moves mouse to x,y
+
+def press(a):
+    pyautogui.press(a)
+    sleep(0.2)
+
+def write(a):
+    pyautogui.write(a, interval = 0.01)             # writes string, a
+    sleep(0.2)
+
+def drag_to(f, g):
+    pyautogui.dragTo(f, g, 0.5, button = 'left')
+    sleep(0.2)
+
+def scroll(n):
+    pyautogui.scroll(n)
+    sleep(2)
+
+def moveMouse_click(x, y):
+    move_mouse(x, y)
+    time.sleep(0.1)                                # leaves 0.25 seconds between moving and clicking
+    click()
+    sleep(0.2)
+
+def moveMouse_doubleClick(x, y):
+    move_mouse(x, y)
+    pyautogui.doubleClick()
+    sleep(0.2)
+
+def write_float(a):
+    pyautogui.write("%.4f" % a, interval = 0.02)     # writes intended float, a
+    sleep(0.2)
+
+def press_enter_thrice():
+    press('enter')
+    press('enter')
+    press('enter')
+
+def go2_GUI():
+    moveMouse_click(555, 881)
+
+def go2_program():
+    moveMouse_click(516, 882)
+
+def setup():
+    move_mouse(134, 882)
+    click()
+    write("AD9958_59 Evaluation Software")  # opening and setting up interface
+    press('enter')
+    sleep(5)
+    press('enter')
+    sleep(2)
+    moveMouse_click(506, 155)
+    sleep(1)
+    drag_to(1416, 101)
+
+    moveMouse_click(17, 39)  # software setup
+    moveMouse_click(31, 64)
+    write("All Channels on @10_20_30_40MHz.stp")
+    press('enter')
+
+    moveMouse_doubleClick(106, 159)  # ref clock
+    write("25")
+
+    moveMouse_click(31, 248)  # VCO gain on
+
+    moveMouse_doubleClick(122, 177)  # multiplier set to 20
+    write("20")
+    moveMouse_click(436, 449)
+
+    moveMouse_doubleClick(1177, 182)  # channel 0 config
+    write_float(200)
+    press_enter_thrice()
+
+    moveMouse_click(1071, 130)  # channel 1 config
+    moveMouse_doubleClick(1177, 182)
+    write_float(200)
+    press_enter_thrice()
+
+    moveMouse_click(1125, 130)  # channel 2 config
+    moveMouse_doubleClick(1177, 182)
+    write_float(200)
+    press_enter_thrice()
+
+    moveMouse_click(1191, 130)  # channel 3 config
+    moveMouse_doubleClick(1177, 182)
+    write_float(200)
+    press_enter_thrice()
+
+    setup_prompt.pack_forget()
+    setup_complete = Label(setup_frame, text = "The AD9959 program should now be setup                \
+                    ")
+    setup_complete.grid(row = 0, column = 0, sticky = W)
+
+    go2_GUI()
+
+def simple_angle(phi):
+    if 0 <= phi < 360:
+        return phi
+    if phi >= 360:
+        phi_reduced = phi - 360
+        return simple_angle(phi_reduced)
+    if phi < 0:
+        phi_reduced = phi + 360
+        return simple_angle(phi_reduced)
+
+def user_angle_prereq():
+
+    inputted_angle_str = user_entry.get()                                                                               # puts the string from the entry in a variable
+    global inputted_angle_int
+    inputted_angle_int = int(inputted_angle_str)                                                                        # putting the integer version of the entry in a variable
+
+    show_user_angle = "The angle you have selected is: " + inputted_angle_str                                           # puts what the user entered in a string
+    user_angle_display = Label(user_input_frame, text = show_user_angle)                                                # name for the label
+    user_angle_display.grid(row = 3, column = 0)                                                                        # putting the label someplace
+
+    if inputted_angle_int > 180 or inputted_angle_int < 0:                                                              # as long as we are within the acceptable range we will not v
+        messagebox.showwarning('Oops!', 'The angle you have selected is not within the range of 0-180 degrees.\nPlease use an appropriate angle')                                                              # get an error
+    else:
+        messagebox.showinfo('Good Job', 'Good, the angle you have selected is acceptable')
+
+def beam_steering(inputted_angle):
+
+    theta = 90 - inputted_angle
+    global phi1
+    global phi2
+    global phi3
+    phi1 = math.sin(theta * (math.pi / 180)) * 180
+    phi2 = 2 * phi1
+    phi3 = 3 * phi1
+
+    phi1 = simple_angle(phi1)
+    phi2 = simple_angle(phi2)
+    phi3 = simple_angle(phi3)
+
+    record = open("log.txt", 'a')
+    record.write("User entered angle is: %.7f degrees\n" % inputted_angle)
+    record.write("theta is: %.7f degrees\n" % theta)
+    record.write("phi1 is: %.7f degrees\n" % phi1)
+    record.write("phi2 is: %.7f degrees\n" % phi2)
+    record.write("phi3 is: %.7f degrees\n" % phi3)
+    record.write("\n\n")
+    record.close()
+
+    go2_program()
+
+    moveMouse_click(1072, 129)  # channel 1 phi1 input
+    moveMouse_doubleClick(1190, 207)
+    write_float(phi1)
+    press_enter_thrice()
+
+    moveMouse_click(1134, 130)  # channel 2 phi2 input
+    moveMouse_doubleClick(1190, 207)
+    write_float(phi2)
+    press_enter_thrice()
+
+    moveMouse_click(1193, 129)  # channel 3 phi3 input
+    moveMouse_doubleClick(1190, 207)
+    write_float(phi3)
+    press_enter_thrice()
+
+    go2_GUI()
+
+def see_phi_outputs():
+    phi1_string = "{:.4f}".format(phi1)
+    phi2_string = "{:.4f}".format(phi2)
+    phi3_string = "{:.4f}".format(phi3)
+
+    phi1_label = Label(outputCalculations_frame, text='The phi 1 value calculated is: ' + phi1_string + '            ')
+    phi1_label.grid(row=2, column=0, sticky = W)
+    phi2_label = Label(outputCalculations_frame, text='The phi 2 value calculated is: ' + phi2_string + '            ')
+    phi2_label.grid(row=3, column=0, sticky = W)
+    phi3_label = Label(outputCalculations_frame, text='The phi 3 value calculated is: ' + phi3_string + '            ')
+    phi3_label.grid(row=4, column=0, sticky = W)
+
+# def open_log_file():
+#     # filepath = filedialog.askopenfilename()
+#     # print(filepath)
+#     log = Toplevel()
+#     file = open('C:/Users/tiern/Documents/log.txt', 'r')
+#     log_text = file.read()
+#     file.close()
+#     log_label = (log, textvariable = log_text)
+#     log_label.pack()
+
+def graph(user_inputted_angle):
+
+    time_right = np.arange(0, 1, 0.1)
+    time_left = np.arange(-1, 0, 0.1)
+
+    slope = np.sin(user_inputted_angle * math.pi/180) / np.cos(user_inputted_angle * math.pi/180)
+
+    if user_inputted_angle <= 90:
+        amplitude = time_right * slope
+        plot.plot(time_right, amplitude)
+        plot.text(0, 0.001, '(0,0) is the center of the antenna array', horizontalalignment = 'left')
+        # plot.text(1, amplitude, 'Direction of the Beam')
+
+    else:
+        amplitude = time_left * slope
+        plot.plot(time_left, amplitude)
+        plot.text(0, 0.001, '(0,0) is the center of the antenna array', horizontalalignment = 'right')
+        # plot.text(-1, amplitude, 'Direction of the Beam')
+
+
+
+    plot.title('Beam Direction')
+    plot.xlabel('antenna axis')
+    plot.ylabel('perpendicular to antennas')
+    plot.axhline(y = 0, color = 'k')
+    plot.show()
+
+# setup ---------------------------------------------------------------------------------------------------------------
+setup_frame = LabelFrame(root, text = "Setup", padx = 25, pady = 25)                                                    # creates setup frame
+setup_frame.grid(row = 0, column = 0, columnspan = 2, sticky = W)
+
+setup_prompt = Label(setup_frame, text = "The AD9959 program is not setup. Please press the setup button        ")      # Tells the user to setup the AD9959 program
+setup_prompt.grid(row = 0, column = 0, sticky = W)
+
+prompt_setup_action = Button(setup_frame, text = 'Setup', command = setup)                                              # Button that setsup the AD9959 program
+prompt_setup_action.grid(row = 0, column = 1)
+# setup ---------------------------------------------------------------------------------------------------------------
+
+
+# User Input ----------------------------------------------------------------------------------------------------------
+inputted_angle_int = IntVar
+
+user_input_frame = LabelFrame(root, text = "User Input", padx = 25, pady = 40)                                          # creates user-input frame
+user_input_frame.grid(row = 0, column = 3, columnspan = 2, sticky = W)
+
+instructions = Label(user_input_frame, text = "Type your intended angle, then click \"enter angle\" after \
+the AD9959 program is setup")                                                                                           # shows basic instructions
+instructions.grid(row = 1, column = 0)
+
+user_entry = Entry(user_input_frame, width = 50, borderwidth = 5)                                                       # entry box for user inputted angle
+user_entry.grid(row = 2, column = 0)
+
+enter_angle_button = Button(user_input_frame, text = "Enter angle", command = user_angle_prereq)
+enter_angle_button.grid(row = 2, column = 1)
+# User Input ----------------------------------------------------------------------------------------------------------
+
+
+# Calculate and Output -------------------------------------------------------------------------------------------------
+calculate_frame = LabelFrame(root, text = "Calculate and Output", padx = 25, pady = 20)
+calculate_frame.grid(row = 1, column = 0, columnspan = 2, sticky = W)
+
+ask_calculate = Button(calculate_frame, text = 'Calculate and Output', command = lambda: beam_steering(inputted_angle_int))
+ask_calculate.grid(row = 0, column = 0)
+# Calculate and Output -------------------------------------------------------------------------------------------------
+
+# Output Calculations --------------------------------------------------------------------------------------------------
+outputCalculations_frame = LabelFrame(root, text = 'Output Calculations', padx = 25, pady = 20)
+outputCalculations_frame.grid(row = 1, column = 3, columnspan = 1, sticky = W)
+
+outputCalculations_instructions = Label(outputCalculations_frame, text = 'Make sure to press calculate and output before\
+ pressing the button below')
+outputCalculations_instructions.grid(row = 0, column = 0)
+
+
+calculations_button = Button(outputCalculations_frame, text = 'Press to see the Phi calculations', command = see_phi_outputs)
+calculations_button.grid(row = 1, column = 0)
+
+# log_button = Button(outputCalculations_frame, text = 'Press to see the logs', command = open_log_file)
+# log_button.grid(row = 6, column = 0)
+# Output Calculations --------------------------------------------------------------------------------------------------
+
+# Visual Representation ------------------------------------------------------------------------------------------------
+visual_frame = LabelFrame(root, text = 'Visualization', padx = 25, pady = 20)
+visual_frame.grid(row = 2, column = 3, columnspan = 1, sticky = W)
+
+visual_instructions = Label(visual_frame, text = 'Make sure to run the calculation before pressing this button')
+visual_instructions.grid(row = 1, column = 0)
+
+visual_button = Button(visual_frame, text = 'Press to see where the beam will point', command = lambda: graph(inputted_angle_int))
+visual_button.grid(row = 2, column = 0)
+# Visual Representation ------------------------------------------------------------------------------------------------
+
+spacer1 = Label(root, text = '                               ')
+spacer1.grid(row = 0, column = 2)
+
+root.mainloop()
