@@ -1,0 +1,119 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.ALL;
+USE ieee.std_logic_arith.ALL;
+USE ieee.std_logic_signed.ALL;
+
+
+
+
+--								entity																														--
+entity bean is
+
+	port ( x_in : in integer;
+				phi1_out : out integer;
+				phi2_out : out integer;
+				phi3_out : out integer);
+				
+end bean;
+--								entity																														--
+
+architecture fpga of bean is
+
+
+--								components																													--
+
+	component special_mult is
+		port ( x1_in, x2_in 					: in integer;
+					product 						: out integer);		
+	end component;
+	
+--								components																													--
+
+
+--								types																															--
+
+type term_k_size is array ( 1 to 11 ) 	of integer;	
+type term_n_size is array ( 0 to 5 ) 	of integer;
+
+--								types																															--
+
+
+--								constants																													--
+
+constant const_1over11 	: integer := 0909;
+constant const_1over10 	: integer := 1000;
+constant const_1over9	: integer := 1111;
+constant const_1over8	: integer := 1250;
+constant const_1over7	: integer := 1429;
+constant const_1over6	: integer := 1667;
+constant const_1over5	: integer := 2000;
+constant const_1over4	: integer := 2500;
+constant const_1over3	: integer := 3333;
+constant const_1over2	: integer := 5000;
+constant const_pi			: integer := 31415;
+
+--								constants																													--
+
+
+--								signals																														--
+
+signal term_k_component	: term_k_size;
+signal term_k_value		: term_k_size;
+signal term_n_value		: term_n_size;
+signal taylor_output		: integer;
+
+--								signals																														--
+
+
+begin
+
+--						finding values for x/n, from n=1 to n=11																					--
+
+	term_k_component_11:	special_mult port map (x_in, const_1over11, term_k_component(11));
+	term_k_component_10:	special_mult port map (x_in, const_1over10, term_k_component(10));
+	term_k_component_9:	special_mult port map (x_in, const_1over9, term_k_component(9));
+	term_k_component_8:	special_mult port map (x_in, const_1over8, term_k_component(8));
+	term_k_component_7:	special_mult port map (x_in, const_1over7, term_k_component(7));
+	term_k_component_6:	special_mult port map (x_in, const_1over6, term_k_component(6));
+	term_k_component_5:	special_mult port map (x_in, const_1over5, term_k_component(5));
+	term_k_component_4:	special_mult port map (x_in, const_1over4, term_k_component(4));
+	term_k_component_3:	special_mult port map (x_in, const_1over3, term_k_component(3));
+	term_k_component_2:	special_mult port map (x_in, const_1over2, term_k_component(2));
+	
+	term_k_component(1) <= 0;
+	
+	
+--						finding values for x/n, from n=1 to n=11																					--
+
+
+--						Calculating term k values																										--
+
+	term_k_value(1) <= x_in;
+	
+	GEN_term_k: for i in 2 to 11 generate
+		term_k_calc: special_mult port map (term_k_value(i-1), term_k_component(i), term_k_value(i));
+	end generate GEN_term_k;
+	
+	
+--						Calculating term k values																										--
+
+
+--						using term k values and assigning to appropriate term n values														--
+
+	term_n_value(0) <= term_k_value(1);
+	term_n_value(1) <= term_k_value(3);
+	term_n_value(2) <= term_k_value(5);
+	term_n_value(3) <= term_k_value(7);
+	term_n_value(4) <= term_k_value(9);
+	term_n_value(5) <= term_k_value(11);
+
+--						using term k values and assigning to appropriate term n values														--
+
+
+	taylor_output <= (term_n_value(0) - term_n_value(1)) + (term_n_value(2) - term_n_value(3)) + (term_n_value(4) - term_n_value(5));
+
+	phi1_out_calc: special_mult port map (const_pi, taylor_output, phi1_out);
+	phi2_out_calc: special_mult port map (2*const_pi, taylor_output, phi2_out);
+	phi3_out_calc: special_mult port map (3*const_pi, taylor_output, phi3_out);
+
+end fpga;
