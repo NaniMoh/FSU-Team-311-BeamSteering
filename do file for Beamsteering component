@@ -1,0 +1,27 @@
+vlib work
+vcom bean.vhd
+vcom special_mult.vhd
+vsim work.bean
+
+
+add wave -divider "Beamsteering Equation Test"
+add wave -divider "Inputs"
+add wave x_in
+
+add wave -divider "Internals"
+add wave term_n_value
+add wave taylor_output
+
+add wave -divider "Outputs"
+add wave phi1_out
+add wave phi2_out
+add wave phi3_out
+
+###Input Data
+radix -decimal
+force x_in 0 0ns, 15708 25ns, -15708 50ns, 10472 75ns, -10472 100ns, 07854 125ns, -07854 150ns
+###Run the Simulation
+run 200ns
+wave zoomfull
+configure wave -gridperiod 50ns
+configure wave -timelineunits ns
